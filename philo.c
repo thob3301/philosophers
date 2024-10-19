@@ -8,10 +8,10 @@
 
 typedef struct s_philo
 {
-	pthread_t		*philo;
-	pthread_mutex_t	*fork;
-	struct s_zeus	*god;
-	struct s_philo	*next;
+	pthread_t			philo;
+	pthread_mutex_t		fork;
+	struct s_chronos	*god;
+	struct s_philo		*next;
 }	t_philo;
 
 typedef struct s_chronos
@@ -32,8 +32,8 @@ t_philo	*init_philo(t_chronos *god)
 	t_philo	*philo;
 
 	philo = malloc(sizeof(t_philo));
-	philo->philo = NULL;
-	philo->fork = NULL;
+	philo.philo = 0;
+	philo.fork = 0;
 	philo->god = god;
 	philo->next = NULL;
 	return (philo);
