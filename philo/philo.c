@@ -6,7 +6,7 @@
 /*   By: miteixei <miteixei@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/08 18:58:10 by miteixei          #+#    #+#             */
-/*   Updated: 2024/12/21 17:58:06 by miteixei         ###   ########.fr       */
+/*   Updated: 2025/01/12 19:34:54 by miteixei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,7 @@ long long int	get_time(void)
 	struct timeval	tv;
 
 	gettimeofday(&tv, NULL);
-	return ((unsigned long long int)tv.tv_sec * 1000 + tv.tv_usec / 1000);
+	return ((long long int)tv.tv_sec * 1000 + tv.tv_usec / 1000);
 }
 
 // To speak, a philosopher will have to lock the speech_mutex then check if
@@ -91,7 +91,7 @@ void	think(t_philo *philo)
 		if (philo->time_last_ate + philo->god->time_to_die - 100 <= get_time())
 			break ;
 		pthread_mutex_unlock(&philo->time_mutex);
-		usleep(10);
+		usleep(10000);
 	}
 }
 
@@ -103,7 +103,7 @@ void	_sleep(t_philo *philo)
 	{
 		if (philo->time_deadline <= get_time())
 			break ;
-		usleep(10);
+		usleep(10000);
 	}
 }
 
@@ -195,6 +195,7 @@ void	create_philos(t_chronos *god)
 	philo_ptr = god->first;
 	while (1)
 	{
+		philo_ptr->time_last_ate = god->genesis;
 		pthread_create(&philo_ptr->thread, NULL, &philo_main, philo_ptr);
 		if (god->number_of_philosophers == philo_ptr->num)
 			break ;
