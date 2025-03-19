@@ -6,19 +6,20 @@
 /*   By: miteixei <miteixei@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/08 18:58:10 by miteixei          #+#    #+#             */
-/*   Updated: 2025/01/12 19:34:54 by miteixei         ###   ########.fr       */
+/*   Updated: 2025/03/19 19:37:13 by miteixei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo.h"
 
 // I'm putting the seconds and microseconds into a single long long value
-long long int	get_time(void)
+unsigned long long int	get_time(void)
 {
 	struct timeval	tv;
 
 	gettimeofday(&tv, NULL);
-	return ((long long int)tv.tv_sec * 1000 + tv.tv_usec / 1000);
+	return ((unsigned long long int)(tv.tv_sec * 1000)
+		+ (unsigned long long int)(tv.tv_usec / 1000));
 }
 
 // To speak, a philosopher will have to lock the speech_mutex then check if
@@ -69,6 +70,7 @@ void	check_death(t_chronos *god)
 	philo_ptr = god->first;
 	while (1)
 	{
+		pthread_mutex_lock(&philo_ptr->time_mutex);
 		if (philo_ptr->time_last_ate + god->time_to_die >= get_time())
 		{
 			pthread_mutex_lock(&god->abort_mutex);
@@ -76,6 +78,7 @@ void	check_death(t_chronos *god)
 			pthread_mutex_unlock(&god->abort_mutex);
 			break ;
 		}
+		pthread_mutex_unlock(&philo_ptr->time_mutex);
 		philo_ptr = philo_ptr->next;
 	}
 	free_philos(god);
@@ -121,7 +124,7 @@ void	eat2(t_philo *philo)
 	{
 		if (philo->time_deadline <= get_time())
 			break ;
-		usleep(10);
+		usleep(10000);
 	}
 	pthread_mutex_unlock(&philo->fork_mutex);
 	pthread_mutex_unlock(&philo->next->fork_mutex);
@@ -196,6 +199,7 @@ void	create_philos(t_chronos *god)
 	while (1)
 	{
 		philo_ptr->time_last_ate = god->genesis;
+		philo_ptr->time_deadline = god->genesis + god->time_to_die;
 		pthread_create(&philo_ptr->thread, NULL, &philo_main, philo_ptr);
 		if (god->number_of_philosophers == philo_ptr->num)
 			break ;
@@ -244,6 +248,7 @@ void	init_philos(t_chronos *god)
 		philo_ptr->next = init_philo(god, philo_i);
 		philo_ptr = philo_ptr->next;
 	}
+	philo_ptr->next = god->first;
 }
 
 long long int	_atol(char *a)
@@ -251,15 +256,15 @@ long long int	_atol(char *a)
 	long long int	i;
 
 	i = 0;
-	while (a && *a)
-		i += i * 10 + (*(a++) - '0');
+	while (*a)
+		i += (i * 10) + (*(a++) - '0');
 	return (i);
 }
 
 // Convert all arguments to long longs and put them in the array
 void	parse_args(int argc, char **argv, int *arg_nums)
 {
-	while (argv && *argv)
+	while (*argv)
 		*(arg_nums++) = _atol(*(argv++));
 	if (argc == 5)
 		*arg_nums = 0;
@@ -270,12 +275,14 @@ bool	vibe_check(char **argv)
 {
 	char	*str;
 
-	while (++argv)
+	while (*(++argv))
 	{
 		str = *argv;
+		if (*str == '\0')
+			return (false);
 		while (*str && ('0' <= *str && *str <= '9'))
-			str++;
-		if (str && (*str != '\0'))
+			++str;
+		if (*str != '\0')
 			return (false);
 	}
 	return (true);
@@ -297,20 +304,28 @@ void	init_god(t_chronos *god, int *arg_nums)
 	god->time_to_eat = arg_nums[2];
 	god->time_to_sleep = arg_nums[3];
 	god->number_of_times_each_philosopher_must_eat = arg_nums[4];
+	god->first = NULL;
+	god->genesis = -1;
 	god->speech = action;
 	pthread_mutex_init(&god->speech_mutex, NULL);
 	pthread_mutex_init(&god->abort_mutex, NULL);
 	god->abort = false;
 }
 
-// Arg check, parse args, init god struct, init philos structs, init mutexes,
-//   write down start time, spawn threads, check end condition on loop
+// Check args,
+//   parse args,
+//   init god struct,
+//   init philos structs,
+//   init mutexes,
+//   write down start time,
+//   spawn threads,
+//   check end condition on loop
 int	main(int argc, char **argv)
 {
 	t_chronos	god;
 	int			arg_nums[5];
 
-	if ((argc != 5 && argc != 6))// || !vibe_check(argv))
+	if ((argc != 5 && argc != 6) || !vibe_check(argv))
 		return (-1);
 	parse_args(argc, argv + 1, arg_nums);
 	init_god(&god, arg_nums);
