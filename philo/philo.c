@@ -6,20 +6,20 @@
 /*   By: miteixei <miteixei@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/08 18:58:10 by miteixei          #+#    #+#             */
-/*   Updated: 2025/03/19 19:37:13 by miteixei         ###   ########.fr       */
+/*   Updated: 2025/03/21 21:09:53 by miteixei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo.h"
 
 // I'm putting the seconds and microseconds into a single long long value
-unsigned long long int	get_time(void)
+long long int	get_time(void)
 {
 	struct timeval	tv;
 
 	gettimeofday(&tv, NULL);
-	return ((unsigned long long int)(tv.tv_sec * 1000)
-		+ (unsigned long long int)(tv.tv_usec / 1000));
+	return ((long long int)tv.tv_sec * 1000
+		+ (long long int)tv.tv_usec / 1000);
 }
 
 // To speak, a philosopher will have to lock the speech_mutex then check if
@@ -305,7 +305,7 @@ void	init_god(t_chronos *god, int *arg_nums)
 	god->time_to_sleep = arg_nums[3];
 	god->number_of_times_each_philosopher_must_eat = arg_nums[4];
 	god->first = NULL;
-	god->genesis = -1;
+	god->genesis = 0;
 	god->speech = action;
 	pthread_mutex_init(&god->speech_mutex, NULL);
 	pthread_mutex_init(&god->abort_mutex, NULL);
