@@ -6,7 +6,7 @@
 /*   By: miteixei <miteixei@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/08 18:58:10 by miteixei          #+#    #+#             */
-/*   Updated: 2025/03/21 21:09:53 by miteixei         ###   ########.fr       */
+/*   Updated: 2025/03/22 20:33:43 by miteixei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,7 +27,7 @@ long long int	get_time(void)
 void	speak(t_philo *philo, enum e_actions line_n)
 {
 	pthread_mutex_lock(&philo->god->speech_mutex);
-	if (!abort_y_n(philo->god))
+	if (abort_y_n(philo->god))
 		printf("%lld %d %s\n", get_time() - philo->god->genesis,
 			philo->num, philo->god->speech[line_n]);
 	pthread_mutex_unlock(&philo->god->speech_mutex);
@@ -41,7 +41,7 @@ void	free_philos(t_chronos *god)
 	philo_ptr = god->first;
 	while (1)
 	{
-		pthread_join(philo_ptr->thread, NULL);
+		//pthread_join(philo_ptr->thread, NULL);
 		pthread_mutex_destroy(&philo_ptr->fork_mutex);
 		pthread_mutex_destroy(&philo_ptr->time_mutex);
 		philo_ptr_destroy = philo_ptr;
@@ -49,7 +49,6 @@ void	free_philos(t_chronos *god)
 			philo_ptr = philo_ptr->next;
 		else
 			philo_ptr = NULL;
-		memset(philo_ptr_destroy, '\0', sizeof(t_philo));
 		free(philo_ptr_destroy);
 		if (!philo_ptr)
 			break ;
@@ -60,41 +59,52 @@ void	end_creation(t_chronos *god)
 {
 	pthread_mutex_destroy(&god->speech_mutex);
 	pthread_mutex_destroy(&god->abort_mutex);
-	memset(god, '\0', sizeof(t_chronos));
 }
 
 void	check_death(t_chronos *god)
 {
-	t_philo	*philo_ptr;
+	t_philo			*philo_ptr;
+	long long int	last_ate;
 
 	philo_ptr = god->first;
 	while (1)
 	{
 		pthread_mutex_lock(&philo_ptr->time_mutex);
-		if (philo_ptr->time_last_ate + god->time_to_die >= get_time())
+		last_ate = philo_ptr->time_last_ate;
+		pthread_mutex_unlock(&philo_ptr->time_mutex);
+		if (last_ate + god->time_to_die <= get_time())
 		{
 			pthread_mutex_lock(&god->abort_mutex);
 			god->abort = true;
 			pthread_mutex_unlock(&god->abort_mutex);
 			break ;
 		}
-		pthread_mutex_unlock(&philo_ptr->time_mutex);
 		philo_ptr = philo_ptr->next;
 	}
 	free_philos(god);
 	end_creation(god);
 }
 
+void	_wait(long long int deadline)
+{
+	long long int	time_til_deadline;
+
+
+}
+
 void	think(t_philo *philo)
 {
+	long long int	_deadline;
+
+	pthread_mutex_lock(&philo->time_mutex);
+	_deadline = philo->time_last_ate + philo->god->time_to_die - 100000;
+	pthread_mutex_unlock(&philo->time_mutex);
 	speak(philo, THINK);
 	while (1)
 	{
-		pthread_mutex_lock(&philo->time_mutex);
-		if (philo->time_last_ate + philo->god->time_to_die - 100 <= get_time())
+		if (_deadline <= get_time())
 			break ;
-		pthread_mutex_unlock(&philo->time_mutex);
-		usleep(10000);
+		usleep(1000);
 	}
 }
 
@@ -106,7 +116,7 @@ void	_sleep(t_philo *philo)
 	{
 		if (philo->time_deadline <= get_time())
 			break ;
-		usleep(10000);
+		usleep(1000);
 	}
 }
 
@@ -124,7 +134,7 @@ void	eat2(t_philo *philo)
 	{
 		if (philo->time_deadline <= get_time())
 			break ;
-		usleep(10000);
+		usleep(1000);
 	}
 	pthread_mutex_unlock(&philo->fork_mutex);
 	pthread_mutex_unlock(&philo->next->fork_mutex);
@@ -132,7 +142,7 @@ void	eat2(t_philo *philo)
 
 void	eat(t_philo *philo)
 {
-	if (philo->num % 2)
+	if (philo->num % 2 == 0)
 	{
 		pthread_mutex_lock(&philo->fork_mutex);
 		speak(philo, FORK);
@@ -174,7 +184,6 @@ void	*philo_main(void *ptr)
 	t_philo	*philo;
 
 	philo = ptr;
-	pthread_detach(philo->thread);
 	while (!abort_y_n(philo->god))
 	{
 		eat(philo);
@@ -185,6 +194,7 @@ void	*philo_main(void *ptr)
 			break ;
 		think(philo);
 	}
+	pthread_detach(philo->thread);
 	return (NULL);
 }
 

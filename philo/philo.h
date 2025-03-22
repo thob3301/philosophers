@@ -6,7 +6,7 @@
 /*   By: miteixei <miteixei@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/08 18:58:43 by miteixei          #+#    #+#             */
-/*   Updated: 2025/03/19 19:20:51 by miteixei         ###   ########.fr       */
+/*   Updated: 2025/03/22 20:29:34 by miteixei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,30 +31,29 @@ enum e_actions
 
 typedef struct s_philo
 {
-	int						num;
-	pthread_t				thread;
-	pthread_mutex_t			fork_mutex;
-	int						time;
-	pthread_mutex_t			time_mutex;
-	unsigned long long int	time_last_ate;
-	unsigned long long int	time_deadline;
-	struct s_chronos		*god;
-	struct s_philo			*next;
+	int					num;
+	pthread_t			thread;
+	pthread_mutex_t		fork_mutex;
+	pthread_mutex_t		time_mutex;
+	long long int		time_last_ate;
+	long long int		time_deadline;
+	struct s_chronos	*god;
+	struct s_philo		*next;
 }	t_philo;
 
 typedef struct s_chronos
 {
-	unsigned long long int	number_of_philosophers;
-	unsigned long long int	time_to_die;
-	unsigned long long int	time_to_eat;
-	unsigned long long int	time_to_sleep;
-	unsigned long long int	number_of_times_each_philosopher_must_eat;
-	struct s_philo			*first;
-	long long int			genesis;
-	const char				**speech;
-	pthread_mutex_t			speech_mutex;
-	pthread_mutex_t			abort_mutex;
-	bool					abort;
+	long long int	number_of_philosophers;
+	long long int	time_to_die;
+	long long int	time_to_eat;
+	long long int	time_to_sleep;
+	long long int	number_of_times_each_philosopher_must_eat;
+	struct s_philo	*first;
+	long long int	genesis;
+	const char		**speech;
+	pthread_mutex_t	speech_mutex;
+	pthread_mutex_t	abort_mutex;
+	bool			abort;
 }	t_chronos;
 
 bool	abort_y_n(t_chronos *god);
