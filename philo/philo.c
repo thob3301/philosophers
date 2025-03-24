@@ -6,20 +6,20 @@
 /*   By: miteixei <miteixei@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/08 18:58:10 by miteixei          #+#    #+#             */
-/*   Updated: 2025/03/22 20:33:43 by miteixei         ###   ########.fr       */
+/*   Updated: 2025/03/24 18:38:23 by miteixei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo.h"
 
 // I'm putting the seconds and microseconds into a single long long value
-long long int	get_time(void)
+long int	get_time(void)
 {
 	struct timeval	tv;
 
 	gettimeofday(&tv, NULL);
-	return ((long long int)tv.tv_sec * 1000
-		+ (long long int)tv.tv_usec / 1000);
+	return ((long int)tv.tv_sec * 1000
+		+ (long int)tv.tv_usec / 1000);
 }
 
 // To speak, a philosopher will have to lock the speech_mutex then check if
@@ -27,8 +27,8 @@ long long int	get_time(void)
 void	speak(t_philo *philo, enum e_actions line_n)
 {
 	pthread_mutex_lock(&philo->god->speech_mutex);
-	if (abort_y_n(philo->god))
-		printf("%lld %d %s\n", get_time() - philo->god->genesis,
+	if (!abort_y_n(philo->god))
+		printf("%5ld %3d %s\n", get_time() - philo->god->genesis,
 			philo->num, philo->god->speech[line_n]);
 	pthread_mutex_unlock(&philo->god->speech_mutex);
 }
@@ -41,7 +41,6 @@ void	free_philos(t_chronos *god)
 	philo_ptr = god->first;
 	while (1)
 	{
-		//pthread_join(philo_ptr->thread, NULL);
 		pthread_mutex_destroy(&philo_ptr->fork_mutex);
 		pthread_mutex_destroy(&philo_ptr->time_mutex);
 		philo_ptr_destroy = philo_ptr;
@@ -64,7 +63,7 @@ void	end_creation(t_chronos *god)
 void	check_death(t_chronos *god)
 {
 	t_philo			*philo_ptr;
-	long long int	last_ate;
+	long int		last_ate;
 
 	philo_ptr = god->first;
 	while (1)
@@ -85,21 +84,16 @@ void	check_death(t_chronos *god)
 	end_creation(god);
 }
 
-void	_wait(long long int deadline)
-{
-	long long int	time_til_deadline;
-
-
-}
-
 void	think(t_philo *philo)
 {
-	long long int	_deadline;
+	long int	_deadline;
 
 	pthread_mutex_lock(&philo->time_mutex);
-	_deadline = philo->time_last_ate + philo->god->time_to_die - 100000;
+	_deadline = philo->time_last_ate;
 	pthread_mutex_unlock(&philo->time_mutex);
+	_deadline += philo->god->time_to_die - 1000;
 	speak(philo, THINK);
+//	usleep((_deadline - get_time()) * 1000);
 	while (1)
 	{
 		if (_deadline <= get_time())
@@ -112,6 +106,7 @@ void	_sleep(t_philo *philo)
 {
 	philo->time_deadline = get_time() + philo->god->time_to_sleep;
 	speak(philo, SLEEP);
+//	usleep(philo->god->time_to_sleep * 1000);
 	while (1)
 	{
 		if (philo->time_deadline <= get_time())
@@ -130,6 +125,7 @@ void	eat2(t_philo *philo)
 	philo->time_last_ate = get_time();
 	pthread_mutex_unlock(&philo->time_mutex);
 	speak(philo, EAT);
+//	usleep(philo->god->time_to_eat * 1000);
 	while (1)
 	{
 		if (philo->time_deadline <= get_time())
@@ -142,7 +138,7 @@ void	eat2(t_philo *philo)
 
 void	eat(t_philo *philo)
 {
-	if (philo->num % 2 == 0)
+	if (philo->num % 2 == 1)
 	{
 		pthread_mutex_lock(&philo->fork_mutex);
 		speak(philo, FORK);
@@ -261,13 +257,13 @@ void	init_philos(t_chronos *god)
 	philo_ptr->next = god->first;
 }
 
-long long int	_atol(char *a)
+long int	_atol(char *a)
 {
-	long long int	i;
+	long int	i;
 
 	i = 0;
 	while (*a)
-		i += (i * 10) + (*(a++) - '0');
+		i = (i * 10) + (*(a++) - '0');
 	return (i);
 }
 

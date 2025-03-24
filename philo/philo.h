@@ -6,7 +6,7 @@
 /*   By: miteixei <miteixei@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/08 18:58:43 by miteixei          #+#    #+#             */
-/*   Updated: 2025/03/22 20:29:34 by miteixei         ###   ########.fr       */
+/*   Updated: 2025/03/24 18:35:16 by miteixei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,21 +35,21 @@ typedef struct s_philo
 	pthread_t			thread;
 	pthread_mutex_t		fork_mutex;
 	pthread_mutex_t		time_mutex;
-	long long int		time_last_ate;
-	long long int		time_deadline;
+	long int			time_last_ate;
+	long int			time_deadline;
 	struct s_chronos	*god;
 	struct s_philo		*next;
 }	t_philo;
 
 typedef struct s_chronos
 {
-	long long int	number_of_philosophers;
-	long long int	time_to_die;
-	long long int	time_to_eat;
-	long long int	time_to_sleep;
-	long long int	number_of_times_each_philosopher_must_eat;
+	long int		number_of_philosophers;
+	long int		time_to_die;
+	long int		time_to_eat;
+	long int		time_to_sleep;
+	long int		number_of_times_each_philosopher_must_eat;
 	struct s_philo	*first;
-	long long int	genesis;
+	long int		genesis;
 	const char		**speech;
 	pthread_mutex_t	speech_mutex;
 	pthread_mutex_t	abort_mutex;
