@@ -6,7 +6,7 @@
 /*   By: miteixei <miteixei@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/08 18:58:43 by miteixei          #+#    #+#             */
-/*   Updated: 2025/03/24 18:35:16 by miteixei         ###   ########.fr       */
+/*   Updated: 2025/03/25 17:55:53 by miteixei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,6 +37,7 @@ typedef struct s_philo
 	pthread_mutex_t		time_mutex;
 	long int			time_last_ate;
 	long int			time_deadline;
+	long int			times_eaten;
 	struct s_chronos	*god;
 	struct s_philo		*next;
 }	t_philo;
@@ -54,6 +55,7 @@ typedef struct s_chronos
 	pthread_mutex_t	speech_mutex;
 	pthread_mutex_t	abort_mutex;
 	bool			abort;
+	bool			*well_fed;
 }	t_chronos;
 
 bool	abort_y_n(t_chronos *god);

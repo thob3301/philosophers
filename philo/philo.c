@@ -6,7 +6,7 @@
 /*   By: miteixei <miteixei@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/08 18:58:10 by miteixei          #+#    #+#             */
-/*   Updated: 2025/03/24 18:38:23 by miteixei         ###   ########.fr       */
+/*   Updated: 2025/03/25 18:15:59 by miteixei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,6 +58,22 @@ void	end_creation(t_chronos *god)
 {
 	pthread_mutex_destroy(&god->speech_mutex);
 	pthread_mutex_destroy(&god->abort_mutex);
+	free(god->well_fed);
+}
+
+bool	check_hunger(t_philo *philo_ptr, bool *well_fed)
+{
+	bool		all_satiated;
+	long int	philo_num;
+
+	if (philo_ptr->times_eaten
+		>= philo_ptr->god->number_of_times_each_philosopher_must_eat)
+		well_fed[philo_ptr->num] = true;
+	all_satiated = true;
+	philo_num = philo_ptr->god->number_of_philosophers;
+	while (philo_num--)
+		all_satiated = all_satiated && *(well_fed++);
+	return (all_satiated);
 }
 
 void	check_death(t_chronos *god)
@@ -71,8 +87,17 @@ void	check_death(t_chronos *god)
 		pthread_mutex_lock(&philo_ptr->time_mutex);
 		last_ate = philo_ptr->time_last_ate;
 		pthread_mutex_unlock(&philo_ptr->time_mutex);
-		if (last_ate + god->time_to_die <= get_time())
+		if (god->number_of_times_each_philosopher_must_eat
+			&& check_hunger(philo_ptr, god->well_fed))
 		{
+			pthread_mutex_lock(&god->abort_mutex);
+			god->abort = true;
+			pthread_mutex_unlock(&god->abort_mutex);
+			break ;
+		}
+		if (last_ate + god->time_to_die < get_time())
+		{
+			speak(philo_ptr, DIE);
 			pthread_mutex_lock(&god->abort_mutex);
 			god->abort = true;
 			pthread_mutex_unlock(&god->abort_mutex);
@@ -91,14 +116,14 @@ void	think(t_philo *philo)
 	pthread_mutex_lock(&philo->time_mutex);
 	_deadline = philo->time_last_ate;
 	pthread_mutex_unlock(&philo->time_mutex);
-	_deadline += philo->god->time_to_die - 1000;
+	_deadline += philo->god->time_to_die - 100;
 	speak(philo, THINK);
 //	usleep((_deadline - get_time()) * 1000);
 	while (1)
 	{
 		if (_deadline <= get_time())
 			break ;
-		usleep(1000);
+		usleep(500);
 	}
 }
 
@@ -111,7 +136,7 @@ void	_sleep(t_philo *philo)
 	{
 		if (philo->time_deadline <= get_time())
 			break ;
-		usleep(1000);
+		usleep(500);
 	}
 }
 
@@ -123,6 +148,8 @@ void	eat2(t_philo *philo)
 	philo->time_deadline = get_time() + philo->god->time_to_eat;
 	pthread_mutex_lock(&philo->time_mutex);
 	philo->time_last_ate = get_time();
+	if (philo->god->number_of_times_each_philosopher_must_eat)
+		++philo->times_eaten;
 	pthread_mutex_unlock(&philo->time_mutex);
 	speak(philo, EAT);
 //	usleep(philo->god->time_to_eat * 1000);
@@ -130,7 +157,7 @@ void	eat2(t_philo *philo)
 	{
 		if (philo->time_deadline <= get_time())
 			break ;
-		usleep(1000);
+		usleep(500);
 	}
 	pthread_mutex_unlock(&philo->fork_mutex);
 	pthread_mutex_unlock(&philo->next->fork_mutex);
@@ -138,7 +165,7 @@ void	eat2(t_philo *philo)
 
 void	eat(t_philo *philo)
 {
-	if (philo->num % 2 == 1)
+	if (philo->num % 2)
 	{
 		pthread_mutex_lock(&philo->fork_mutex);
 		speak(philo, FORK);
@@ -180,8 +207,18 @@ void	*philo_main(void *ptr)
 	t_philo	*philo;
 
 	philo = ptr;
-	while (!abort_y_n(philo->god))
+	if (philo->num == philo->next->num)
 	{
+		pthread_mutex_lock(&philo->god->speech_mutex);
+		printf("Existence is futile\n");
+		pthread_mutex_unlock(&philo->god->speech_mutex);
+		pthread_detach(philo->thread);
+		return (NULL);
+	}
+	while (1)
+	{
+		if (abort_y_n(philo->god))
+			break ;
 		eat(philo);
 		if (abort_y_n(philo->god))
 			break ;
@@ -257,6 +294,16 @@ void	init_philos(t_chronos *god)
 	philo_ptr->next = god->first;
 }
 
+int	_atoi(char *a)
+{
+	int	i;
+
+	i = 0;
+	while (*a)
+		i = (i * 10) + (*(a++) - '0');
+	return (i);
+}
+
 long int	_atol(char *a)
 {
 	long int	i;
@@ -268,12 +315,19 @@ long int	_atol(char *a)
 }
 
 // Convert all arguments to long longs and put them in the array
-void	parse_args(int argc, char **argv, int *arg_nums)
+bool	parse_args(int argc, char **argv, int *arg_nums)
 {
 	while (*argv)
-		*(arg_nums++) = _atol(*(argv++));
+	{
+		*arg_nums = _atol(*argv);
+		if (*arg_nums != _atoi(*argv))
+			return (false);
+		++arg_nums;
+		++argv;
+	}
 	if (argc == 5)
 		*arg_nums = 0;
+	return (true);
 }
 
 // Check if every character in arguments is a digit
@@ -292,6 +346,12 @@ bool	vibe_check(char **argv)
 			return (false);
 	}
 	return (true);
+}
+
+void	init_well_fed(bool *well_fed, long int n_o_p)
+{
+	while (n_o_p--)
+		*(well_fed++) = false;
 }
 
 // Initialize the God struct with the arguments,
@@ -316,6 +376,8 @@ void	init_god(t_chronos *god, int *arg_nums)
 	pthread_mutex_init(&god->speech_mutex, NULL);
 	pthread_mutex_init(&god->abort_mutex, NULL);
 	god->abort = false;
+	god->well_fed = malloc(god->number_of_philosophers * sizeof(bool));
+	init_well_fed(god->well_fed, god->number_of_philosophers);
 }
 
 // Check args,
@@ -333,7 +395,8 @@ int	main(int argc, char **argv)
 
 	if ((argc != 5 && argc != 6) || !vibe_check(argv))
 		return (-1);
-	parse_args(argc, argv + 1, arg_nums);
+	if (!parse_args(argc, argv + 1, arg_nums))
+		return (-1);
 	init_god(&god, arg_nums);
 	init_philos(&god);
 	init_mutexes(&god);
