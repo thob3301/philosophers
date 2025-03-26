@@ -6,7 +6,7 @@
 /*   By: miteixei <miteixei@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/08 18:58:43 by miteixei          #+#    #+#             */
-/*   Updated: 2025/03/25 17:55:53 by miteixei         ###   ########.fr       */
+/*   Updated: 2025/03/26 17:57:25 by miteixei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,6 +58,6 @@ typedef struct s_chronos
 	bool			*well_fed;
 }	t_chronos;
 
-bool	abort_y_n(t_chronos *god);
+bool	gods_will(t_chronos *god);
 
 #endif

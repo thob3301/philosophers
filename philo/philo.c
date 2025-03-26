@@ -6,13 +6,13 @@
 /*   By: miteixei <miteixei@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/08 18:58:10 by miteixei          #+#    #+#             */
-/*   Updated: 2025/03/25 18:15:59 by miteixei         ###   ########.fr       */
+/*   Updated: 2025/03/26 20:29:23 by miteixei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo.h"
 
-// I'm putting the seconds and microseconds into a single long long value
+// I'm putting the seconds and microseconds into a single long value
 long int	get_time(void)
 {
 	struct timeval	tv;
@@ -27,7 +27,7 @@ long int	get_time(void)
 void	speak(t_philo *philo, enum e_actions line_n)
 {
 	pthread_mutex_lock(&philo->god->speech_mutex);
-	if (!abort_y_n(philo->god))
+	if (gods_will(philo->god))
 		printf("%5ld %3d %s\n", get_time() - philo->god->genesis,
 			philo->num, philo->god->speech[line_n]);
 	pthread_mutex_unlock(&philo->god->speech_mutex);
@@ -41,6 +41,7 @@ void	free_philos(t_chronos *god)
 	philo_ptr = god->first;
 	while (1)
 	{
+		pthread_join(philo_ptr->thread, NULL);
 		pthread_mutex_destroy(&philo_ptr->fork_mutex);
 		pthread_mutex_destroy(&philo_ptr->time_mutex);
 		philo_ptr_destroy = philo_ptr;
@@ -61,40 +62,46 @@ void	end_creation(t_chronos *god)
 	free(god->well_fed);
 }
 
-bool	check_hunger(t_philo *philo_ptr, bool *well_fed)
+bool	check_hunger(t_philo *philo_ptr, bool *well_fed, long int times_eaten)
 {
 	bool		all_satiated;
 	long int	philo_num;
 
-	if (philo_ptr->times_eaten
+	all_satiated = false;
+	if (times_eaten
 		>= philo_ptr->god->number_of_times_each_philosopher_must_eat)
-		well_fed[philo_ptr->num] = true;
-	all_satiated = true;
-	philo_num = philo_ptr->god->number_of_philosophers;
-	while (philo_num--)
-		all_satiated = all_satiated && *(well_fed++);
+	{
+		well_fed[philo_ptr->num - 1] = true;
+		all_satiated = true;
+		philo_num = philo_ptr->god->number_of_philosophers;
+		while (philo_num--)
+			all_satiated = all_satiated && *(well_fed++);
+	}
+	if (all_satiated)
+	{
+		pthread_mutex_lock(&philo_ptr->god->abort_mutex);
+		philo_ptr->god->abort = true;
+		pthread_mutex_unlock(&philo_ptr->god->abort_mutex);
+	}
 	return (all_satiated);
 }
 
-void	check_death(t_chronos *god)
+void	check_on_philos(t_chronos *god)
 {
-	t_philo			*philo_ptr;
-	long int		last_ate;
+	t_philo		*philo_ptr;
+	long int	last_ate;
+	long int	times_eaten;
 
 	philo_ptr = god->first;
 	while (1)
 	{
 		pthread_mutex_lock(&philo_ptr->time_mutex);
 		last_ate = philo_ptr->time_last_ate;
+		times_eaten = philo_ptr->times_eaten;
 		pthread_mutex_unlock(&philo_ptr->time_mutex);
 		if (god->number_of_times_each_philosopher_must_eat
-			&& check_hunger(philo_ptr, god->well_fed))
-		{
-			pthread_mutex_lock(&god->abort_mutex);
-			god->abort = true;
-			pthread_mutex_unlock(&god->abort_mutex);
+			&& check_hunger(philo_ptr, god->well_fed, times_eaten))
 			break ;
-		}
 		if (last_ate + god->time_to_die < get_time())
 		{
 			speak(philo_ptr, DIE);
@@ -105,6 +112,7 @@ void	check_death(t_chronos *god)
 		}
 		philo_ptr = philo_ptr->next;
 	}
+		usleep(2000000);
 	free_philos(god);
 	end_creation(god);
 }
@@ -116,7 +124,7 @@ void	think(t_philo *philo)
 	pthread_mutex_lock(&philo->time_mutex);
 	_deadline = philo->time_last_ate;
 	pthread_mutex_unlock(&philo->time_mutex);
-	_deadline += philo->god->time_to_die - 100;
+	_deadline += philo->god->time_to_die - 1000;
 	speak(philo, THINK);
 //	usleep((_deadline - get_time()) * 1000);
 	while (1)
@@ -136,7 +144,7 @@ void	_sleep(t_philo *philo)
 	{
 		if (philo->time_deadline <= get_time())
 			break ;
-		usleep(500);
+		usleep(50);
 	}
 }
 
@@ -145,13 +153,18 @@ void	_sleep(t_philo *philo)
 // Odd number philosophers do it the other way around
 void	eat2(t_philo *philo)
 {
+	if (!gods_will(philo->god))
+	{
+		pthread_mutex_unlock(&philo->fork_mutex);
+		pthread_mutex_unlock(&philo->next->fork_mutex);
+		return ;
+	}
 	philo->time_deadline = get_time() + philo->god->time_to_eat;
 	pthread_mutex_lock(&philo->time_mutex);
 	philo->time_last_ate = get_time();
 	if (philo->god->number_of_times_each_philosopher_must_eat)
 		++philo->times_eaten;
 	pthread_mutex_unlock(&philo->time_mutex);
-	speak(philo, EAT);
 //	usleep(philo->god->time_to_eat * 1000);
 	while (1)
 	{
@@ -179,6 +192,8 @@ void	eat(t_philo *philo)
 		pthread_mutex_lock(&philo->fork_mutex);
 		speak(philo, FORK);
 	}
+	philo->time_deadline = get_time() + philo->god->time_to_eat;
+	speak(philo, EAT);
 	eat2(philo);
 }
 
@@ -188,12 +203,12 @@ void	eat(t_philo *philo)
 // The philosophers essecially pray to God
 //   to decide whether to proceed with their activities
 // Let's not think about it too much
-bool	abort_y_n(t_chronos *god)
+bool	gods_will(t_chronos *god)
 {
 	bool	condition;
 
 	pthread_mutex_lock(&god->abort_mutex);
-	condition = god->abort;
+	condition = !god->abort;
 	pthread_mutex_unlock(&god->abort_mutex);
 	return (condition);
 }
@@ -212,22 +227,20 @@ void	*philo_main(void *ptr)
 		pthread_mutex_lock(&philo->god->speech_mutex);
 		printf("Existence is futile\n");
 		pthread_mutex_unlock(&philo->god->speech_mutex);
-		pthread_detach(philo->thread);
 		return (NULL);
 	}
 	while (1)
 	{
-		if (abort_y_n(philo->god))
+		if (!gods_will(philo->god))
 			break ;
 		eat(philo);
-		if (abort_y_n(philo->god))
+		if (!gods_will(philo->god))
 			break ;
 		_sleep(philo);
-		if (abort_y_n(philo->god))
+		if (!gods_will(philo->god))
 			break ;
 		think(philo);
 	}
-	pthread_detach(philo->thread);
 	return (NULL);
 }
 
@@ -402,5 +415,5 @@ int	main(int argc, char **argv)
 	init_mutexes(&god);
 	god.genesis = get_time();
 	create_philos(&god);
-	check_death(&god);
+	check_on_philos(&god);
 }
