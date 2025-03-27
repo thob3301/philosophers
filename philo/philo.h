@@ -6,7 +6,7 @@
 /*   By: miteixei <miteixei@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/08 18:58:43 by miteixei          #+#    #+#             */
-/*   Updated: 2025/03/26 17:57:25 by miteixei         ###   ########.fr       */
+/*   Updated: 2025/03/27 17:47:38 by miteixei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,6 +58,38 @@ typedef struct s_chronos
 	bool			*well_fed;
 }	t_chronos;
 
-bool	gods_will(t_chronos *god);
+// admin_stuff.c
+long int	get_time(void);
+void		speak(t_philo *philo, enum e_actions line_n);
+bool		check_hunger(t_philo *philo_ptr,
+				bool *well_fed, long int times_eaten);
+void		check_on_philos(t_chronos *god);
+bool		gods_will(t_chronos *god);
+
+// free.c
+void		free_philos(t_chronos *god);
+void		end_creation(t_chronos *god);
+
+// philo.c
+void		think(t_philo *philo);
+void		_sleep(t_philo *philo);
+void		eat2(t_philo *philo);
+void		eat(t_philo *philo);
+void		*philo_main(void *ptr);
+
+// init1.c
+void		create_philos(t_chronos *god);
+void		init_mutexes(t_chronos *god);
+t_philo		*init_philo(t_chronos *god, int num);
+void		init_philos(t_chronos *god);
+// init2.c
+void		init_well_fed(bool *well_fed, long int n_o_p);
+void		init_god(t_chronos *god, int *arg_nums);
+
+// input.c
+int			_atoi(char *a);
+long int	_atol(char *a);
+bool		parse_args(int argc, char **argv, int *arg_nums);
+bool		vibe_check(char **argv);
 
 #endif
