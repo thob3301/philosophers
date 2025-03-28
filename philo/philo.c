@@ -6,7 +6,7 @@
 /*   By: miteixei <miteixei@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/08 18:58:10 by miteixei          #+#    #+#             */
-/*   Updated: 2025/03/27 18:38:54 by miteixei         ###   ########.fr       */
+/*   Updated: 2025/03/28 22:51:34 by miteixei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -109,9 +109,6 @@ void	check_on_philos(t_chronos *god)
 		last_ate = philo_ptr->time_last_ate;
 		times_eaten = philo_ptr->times_eaten;
 		pthread_mutex_unlock(&philo_ptr->time_mutex);
-		if (god->number_of_times_each_philosopher_must_eat
-			&& check_hunger(philo_ptr, god->well_fed, times_eaten))
-			break ;
 		if (last_ate + god->time_to_die < get_time())
 		{
 			speak(philo_ptr, DIE);
@@ -120,8 +117,11 @@ void	check_on_philos(t_chronos *god)
 			pthread_mutex_unlock(&god->abort_mutex);
 			break ;
 		}
+		if (god->number_of_times_each_philosopher_must_eat
+			&& check_hunger(philo_ptr, god->well_fed, times_eaten))
+			break ;
 		philo_ptr = philo_ptr->next;
-		usleep(god->time_to_die * 1000 / god->number_of_philosophers);
+		usleep(god->time_to_die * 1000 / god->number_of_philosophers / 10);
 	}
 	free_philos(god);
 	end_creation(god);
@@ -136,26 +136,24 @@ void	think(t_philo *philo)
 	pthread_mutex_unlock(&philo->time_mutex);
 	_deadline += philo->god->time_to_die;
 	speak(philo, THINK);
-	usleep((_deadline - get_time()) * 1000);
-//	while (1)
-//	{
-//		if (_deadline <= get_time())
-//			break ;
-//		usleep(500);
-//	}
+	while (1)
+	{
+		if (_deadline <= get_time())
+			break ;
+		usleep(500);
+	}
 }
 
 void	_sleep(t_philo *philo)
 {
 	philo->time_deadline = get_time() + philo->god->time_to_sleep;
 	speak(philo, SLEEP);
-	usleep(philo->god->time_to_sleep * 1000);
-//	while (1)
-//	{
-//		if (philo->time_deadline <= get_time())
-//			break ;
-//		usleep(500);
-//	}
+	while (1)
+	{
+		if (philo->time_deadline <= get_time())
+			break ;
+		usleep(500);
+	}
 }
 
 // To eat, even number philosophers need to pick up the right fork first
@@ -175,13 +173,12 @@ void	eat2(t_philo *philo)
 	if (philo->god->number_of_times_each_philosopher_must_eat)
 		++philo->times_eaten;
 	pthread_mutex_unlock(&philo->time_mutex);
-	usleep(philo->god->time_to_eat * 1000);
-//	while (1)
-//	{
-//		if (philo->time_deadline <= get_time())
-//			break ;
-//		usleep(500);
-//	}
+	while (1)
+	{
+		if (philo->time_deadline <= get_time())
+			break ;
+		usleep(500);
+	}
 	pthread_mutex_unlock(&philo->fork_mutex);
 	pthread_mutex_unlock(&philo->next->fork_mutex);
 }
@@ -342,8 +339,8 @@ bool	parse_args(int argc, char **argv, int *arg_nums)
 {
 	while (*argv)
 	{
-		*arg_nums = _atol(*argv);
-		if (*arg_nums != _atoi(*argv))
+		*arg_nums = _atoi(*argv);
+		if (*arg_nums != _atol(*argv))
 			return (false);
 		++arg_nums;
 		++argv;
