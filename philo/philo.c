@@ -6,7 +6,7 @@
 /*   By: miteixei <miteixei@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/08 18:58:10 by miteixei          #+#    #+#             */
-/*   Updated: 2025/03/30 20:46:58 by miteixei         ###   ########.fr       */
+/*   Updated: 2025/03/30 21:21:20 by miteixei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,12 +46,6 @@ void	_sleep(t_philo *philo)
 // Odd number philosophers do it the other way around
 void	eat2(t_philo *philo)
 {
-	if (!gods_will(philo->god))
-	{
-		pthread_mutex_unlock(&philo->fork_mutex);
-		pthread_mutex_unlock(&philo->next->fork_mutex);
-		return ;
-	}
 	philo->time_deadline = get_time() + philo->god->time_to_eat;
 	pthread_mutex_lock(&philo->time_mutex);
 	philo->time_last_ate = get_time();
@@ -74,9 +68,8 @@ void	eat(t_philo *philo)
 		left_handed(philo);
 	else
 		right_handed(philo);
-	speak(philo, EAT);
 	pthread_mutex_lock(&philo->time_mutex);
-	if (philo->time_last_ate <= get_time())
+	if (philo->time_last_ate > get_time() || !gods_will(philo->god))
 	{
 		pthread_mutex_unlock(&philo->fork_mutex);
 		pthread_mutex_unlock(&philo->next->fork_mutex);
@@ -84,14 +77,13 @@ void	eat(t_philo *philo)
 		return ;
 	}
 	pthread_mutex_unlock(&philo->time_mutex);
-	philo->time_deadline = get_time() + philo->god->time_to_eat;
+	speak(philo, EAT);
 	eat2(philo);
 }
 
 // Every philosopher loops between eating, sleeping, and thinking
 // They don't read books, however, they must have read them all by now
-// Before reentering the loop the abort condition is checked,
-//   as well as in between actions
+// During the loop, the abort condition is checked between actions
 void	*philo_main(void *ptr)
 {
 	t_philo	*philo;

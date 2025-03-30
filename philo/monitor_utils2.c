@@ -6,7 +6,7 @@
 /*   By: miteixei <miteixei@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/30 19:10:52 by miteixei          #+#    #+#             */
-/*   Updated: 2025/03/30 20:07:24 by miteixei         ###   ########.fr       */
+/*   Updated: 2025/03/30 21:28:23 by miteixei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,7 +61,7 @@ void	check_death(t_chronos *god)
 			&& check_hunger(philo_ptr, god->well_fed, times_eaten))
 			break ;
 		philo_ptr = philo_ptr->next;
-		usleep(god->time_to_die * 1000 / god->number_of_philosophers / 10);
+		usleep(god->time_to_die * 1000 / god->number_of_philosophers / 50);
 	}
 }
 
