@@ -6,7 +6,7 @@
 /*   By: miteixei <miteixei@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/08 18:58:43 by miteixei          #+#    #+#             */
-/*   Updated: 2025/03/27 17:47:38 by miteixei         ###   ########.fr       */
+/*   Updated: 2025/03/30 19:07:37 by miteixei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,16 +58,20 @@ typedef struct s_chronos
 	bool			*well_fed;
 }	t_chronos;
 
-// admin_stuff.c
+// monitor_utils1.c
 long int	get_time(void);
 void		speak(t_philo *philo, enum e_actions line_n);
+void		speak_without_permission(t_philo *philo, enum e_actions line_n);
+// monitor_utils2.c
 bool		check_hunger(t_philo *philo_ptr,
 				bool *well_fed, long int times_eaten);
-void		check_on_philos(t_chronos *god);
+void		check_death(t_chronos *god);
+void		monitor_philos(t_chronos *god);
 bool		gods_will(t_chronos *god);
 
 // free.c
 void		free_philos(t_chronos *god);
+void		join_philos(t_chronos *god);
 void		end_creation(t_chronos *god);
 
 // philo.c
