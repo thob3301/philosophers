@@ -6,7 +6,7 @@
 /*   By: miteixei <miteixei@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/08 18:58:43 by miteixei          #+#    #+#             */
-/*   Updated: 2025/03/30 19:07:37 by miteixei         ###   ########.fr       */
+/*   Updated: 2025/03/30 20:49:07 by miteixei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -80,6 +80,10 @@ void		_sleep(t_philo *philo);
 void		eat2(t_philo *philo);
 void		eat(t_philo *philo);
 void		*philo_main(void *ptr);
+
+// philo_manners.c
+void		left_handed(t_philo *philo);
+void		right_handed(t_philo *philo);
 
 // init1.c
 void		create_philos(t_chronos *god);

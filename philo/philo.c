@@ -6,7 +6,7 @@
 /*   By: miteixei <miteixei@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/08 18:58:10 by miteixei          #+#    #+#             */
-/*   Updated: 2025/03/30 19:20:17 by miteixei         ###   ########.fr       */
+/*   Updated: 2025/03/30 20:46:58 by miteixei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -71,21 +71,20 @@ void	eat2(t_philo *philo)
 void	eat(t_philo *philo)
 {
 	if (philo->num % 2)
-	{
-		pthread_mutex_lock(&philo->fork_mutex);
-		speak(philo, FORK);
-		pthread_mutex_lock(&philo->next->fork_mutex);
-		speak(philo, FORK);
-	}
+		left_handed(philo);
 	else
-	{
-		pthread_mutex_lock(&philo->next->fork_mutex);
-		speak(philo, FORK);
-		pthread_mutex_lock(&philo->fork_mutex);
-		speak(philo, FORK);
-	}
-	philo->time_deadline = get_time() + philo->god->time_to_eat;
+		right_handed(philo);
 	speak(philo, EAT);
+	pthread_mutex_lock(&philo->time_mutex);
+	if (philo->time_last_ate <= get_time())
+	{
+		pthread_mutex_unlock(&philo->fork_mutex);
+		pthread_mutex_unlock(&philo->next->fork_mutex);
+		pthread_mutex_unlock(&philo->time_mutex);
+		return ;
+	}
+	pthread_mutex_unlock(&philo->time_mutex);
+	philo->time_deadline = get_time() + philo->god->time_to_eat;
 	eat2(philo);
 }
 
